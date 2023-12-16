@@ -281,9 +281,127 @@ def get_personal_info(message):
         user_data[user_id]['citizenship'] = citizenship
         STEP += 1
         #ask_for_birthdate(message.chat.id)
+    elif 'birthdate' not in user_data[user_id]:
+        birthdate = message.text.strip()
+        print(birthdate)
+        if is_valid_birthdate(birthdate):
+            user_data[user_id]['birthdate'] = birthdate
+
+            ask_for_gender(message.chat.id)
+        else:
+            bot.send_message(message.chat.id, 'Пожалуйста, введи свою дату рождения в правильном формате.')
+    elif 'gender' not in user_data[user_id]:
+        gender = message.text.strip()
+        if gender.lower() == 'женский' or gender.lower() == 'мужской':
+
+            user_data[user_id]['gender'] = gender.capitalize()
+
+            ask_for_status(message.chat.id)
+        else:
+            bot.send_message(message.chat.id, 'Пожалуйста, введи либо женский, либо мужской.')
+
+    elif 'status' not in user_data[user_id]:
+        status = message.text.strip()
+
+        if all(word.isalpha() or word.isspace() for word in status.split()):
+            user_data[user_id]['status'] = status.capitalize()
+            ask_for_city(message.chat.id)
+        else:
+            bot.send_message(message.chat.id, 'Допускаются только буквы.')
+
+
+    elif 'city' not in user_data[user_id]:
+        city = message.text.strip()
+        if all(word.isalpha() or word.isspace() for word in city.split()):
+            user_data[user_id]['city'] = city.capitalize()
+            bot.send_message(message.chat.id, '<b>Шаг 3 из 5.</b> Образование.', parse_mode='html')
+
+            ask_for_univ(message.chat.id)
+        else:
+            bot.send_message(message.chat.id, 'Допускаются только буквы.')
+
+
+    elif 'univ' not in user_data[user_id]:
+        univ = message.text.strip()
+        if all(word.isalpha() or word.isspace() for word in univ.split()):
+            user_data[user_id]['univ'] = univ
+            ask_for_facultate(message.chat.id)
+        else:
+            bot.send_message(message.chat.id, 'Допускаются только буквы.')
+
+
+    elif 'facultate' not in user_data[user_id]:
+        facultate = message.text.strip()
+        if all(word.isalpha() or word.isspace() for word in facultate.split()):
+            user_data[user_id]['facultate'] = facultate.capitalize()
+            ask_for_formed(message.chat.id)
+        else:
+            bot.send_message(message.chat.id, 'Допускаются только буквы.')
+
+
+    elif 'formed' not in user_data[user_id]:
+        formed = message.text.strip()
+        if all(word.isalpha() or word.isspace() for word in formed.split()):
+            user_data[user_id]['formed'] = formed.capitalize()
+            ask_for_year(message.chat.id)
+        else:
+            bot.send_message(message.chat.id, 'Допускаются только буквы.')
+
+    elif 'year' not in user_data[user_id]:
+        year = message.text.strip()
+        if year.isdigit() and int(year) > 1980:
+            user_data[user_id]['year'] = year
+            ask_for_prof(message.chat.id)
+        else:
+            bot.send_message(message.chat.id, 'Пожалуйста, введи правильный год.')
+
+
+    elif 'prof' not in user_data[user_id]:
+        prof = message.text.strip()
+        if all(word.isalpha() or word.isspace() for word in prof.split()):
+            user_data[user_id]['prof'] = prof.capitalize()
+
+            bot.send_message(message.chat.id, '<b>Шаг 4 из 5.</b> Опыт работы.', parse_mode='html')
+            ask_for_post(message.chat.id)
+        else:
+            bot.send_message(message.chat.id, 'Допускаются только буквы.')
+
+
+    elif 'post' not in user_data[user_id]:
+        post = message.text.strip()
+        if all(word.isalpha() or word.isspace() for word in post.split()):
+            user_data[user_id]['post'] = post.capitalize()
+            ask_for_exp(message.chat.id)
+        else:
+            bot.send_message(message.chat.id, 'Допускаются только буквы.')
+
+
+    elif 'exp' not in user_data[user_id]:
+        exp = message.text.strip()
+        user_data[user_id]['exp'] = exp.capitalize()
+        ask_for_dopinf(message.chat.id)
+
+    elif 'dopinf' not in user_data[user_id]:
+        dopinf = message.text.strip()
+        if len(dopinf) > 120:
+            user_data[user_id]['dopinf'] = dopinf
+            ask_for_link(message.chat.id)
+        else:
+            bot.send_message(message.chat.id, 'Сообщение должно содержать более 120 символов', parse_mode='html')
+
+
+    elif 'link' not in user_data[user_id]:
+        link = message.text.strip()
+        user_data[user_id]['link'] = link
+
+        bot.send_message(message.chat.id, '<b>Шаг 5 из 5.</b> Почти готово!', parse_mode='html')
+
+        show_progress(message.chat.id)
+        """
+
 
     if STEP == 5:
-        edit_menu({'message': {'chat': {'id': user_id}}})
+        edit_menu({'message': {'chat': {'id': user_id}}})"""
 
 
 
