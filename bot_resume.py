@@ -27,6 +27,10 @@ def help_command(message):
 
 @bot.message_handler(commands=['start'])
 def main(message):
+    global MENU
+    user_id = message.from_user.id
+    MENU = False
+    user_data.pop(user_id, None)
     markup_inline = types.InlineKeyboardMarkup(row_width=1)
     button_create_resume = types.InlineKeyboardButton(text='Составить резюме', callback_data='create_resume')
     markup_inline.add(button_create_resume)
@@ -141,10 +145,9 @@ def handle_confirmation_callback(call):
 
         bot.send_message(call.message.chat.id, 'В разработке😊')
 
-
     elif call.data == 'cancel_resume_generation':
-        user_data.pop(user_id, None)
-        bot.send_message(call.message.chat.id, 'Ты отменил создание резюме. Данные были удалены😔')
+        #user_data.pop(user_id, None)
+        bot.send_message(call.message.chat.id, 'Ты отменил создание резюме😔')
 
     bot.edit_message_reply_markup(chat_id=call.message.chat.id, message_id=call.message.message_id, reply_markup=None)
 
@@ -171,7 +174,7 @@ def ask_for_citizenship(chat_id):
     bot.send_message(chat_id, 'Укажи свое гражданство.')
 
 def ask_for_birthdate(chat_id):
-    bot.send_message(chat_id, 'Укажи свою дату рождения в формате ДД.ММ.ГГГГ .')
+    bot.send_message(chat_id, 'Укажи свою дату рождения в формате ДД.ММ.ГГГГ.')
 
 def is_valid_birthdate(birthdate):
     try:
