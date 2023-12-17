@@ -11,7 +11,7 @@ bot = telebot.TeleBot(TOKEN)
 
 user_data = defaultdict(dict)
 
-STEP = 0
+MENU = False
 
 @bot.message_handler(commands=['help'])
 def help_command(message):
@@ -34,26 +34,8 @@ def main(message):
                                       'Я помогу тебе составить резюме на твой вкус📄\n\n'
                                       'Нажми на кнопку ниже, чтобы начать👇', parse_mode='html', reply_markup=markup_inline)
 
-@bot.callback_query_handler(func=lambda call: call.data.startswith('template_'))
-def choose_template(call):
-    template_number = int(call.data.split('_')[1])
-
-    # Сохраняем выбранный шаблон в данных пользователя
-    user_id = call.from_user.id
-    user_data[user_id]['template'] = template_number
-
-    # Удаляем клавиатуру после выбора шаблона
-    bot.edit_message_reply_markup(chat_id=call.message.chat.id, message_id=call.message.message_id, reply_markup=None)
-
-    bot.send_message(call.message.chat.id, f'«Шаблон {template_number}» выбран успешно! ✅\n'
-                                           'Теперь мы можем перейти к следующему шагу.')
-
-    personal_info(call.message.chat.id)
-
 @bot.callback_query_handler(func=lambda call: call.data == 'create_resume')
 def create_resume(call):
-    global STEP
-    STEP += 1
     # Удаляем текущее сообщение
     bot.delete_message(call.message.chat.id, call.message.message_id)
     # Отправляем следующий блок с шагом 1 из 9
@@ -79,6 +61,22 @@ def create_resume(call):
     bot.send_media_group(call.message.chat.id, media=media_group)
     bot.send_message(call.message.chat.id, 'Для того, чтобы создать резюме, выбери шаблон, который тебе нравится📋',
                      reply_markup=markup_inline)
+
+@bot.callback_query_handler(func=lambda call: call.data.startswith('template_'))
+def choose_template(call):
+    template_number = int(call.data.split('_')[1])
+
+    # Сохраняем выбранный шаблон в данных пользователя
+    user_id = call.from_user.id
+    user_data[user_id]['template'] = template_number
+
+    # Удаляем клавиатуру после выбора шаблона
+    bot.edit_message_reply_markup(chat_id=call.message.chat.id, message_id=call.message.message_id, reply_markup=None)
+
+    bot.send_message(call.message.chat.id, f'«Шаблон {template_number}» выбран успешно! ✅\n'
+                                           'Теперь мы можем перейти к следующему шагу.')
+
+    personal_info(call.message.chat.id)
 
 def show_progress(chat_id):
     user_id = chat_id
@@ -140,15 +138,16 @@ def handle_confirmation_callback(call):
     user_id = call.from_user.id
 
     if call.data == 'confirm_resume_generation':
-        #Обработка подтверждения генерации резюме
-        # ...
+
         bot.send_message(call.message.chat.id, 'В разработке😊')
 
 
     elif call.data == 'cancel_resume_generation':
-        # Очистка словаря при отказе от генерации резюме
         user_data.pop(user_id, None)
         bot.send_message(call.message.chat.id, 'Ты отменил создание резюме. Данные были удалены😔')
+
+    bot.edit_message_reply_markup(chat_id=call.message.chat.id, message_id=call.message.message_id, reply_markup=None)
+
 
 def personal_info(chat_id):
     bot.send_message(chat_id, f'<b>Шаг 2 из 5</b>. Личная информация.\n', parse_mode='html')
@@ -172,7 +171,7 @@ def ask_for_citizenship(chat_id):
     bot.send_message(chat_id, 'Укажи свое гражданство.')
 
 def ask_for_birthdate(chat_id):
-    bot.send_message(chat_id, 'Укажи свою дату рождения в формате __.__.____ .')
+    bot.send_message(chat_id, 'Укажи свою дату рождения в формате ДД.ММ.ГГГГ .')
 
 def is_valid_birthdate(birthdate):
     try:
@@ -227,28 +226,29 @@ def edit_menu(chat_id):
     item2 = types.KeyboardButton('Шаг 2')
     item3 = types.KeyboardButton('Шаг 3')
     item4 = types.KeyboardButton('Шаг 4')
-    item5 = types.KeyboardButton('Шаг 5')
-    item6 = types.KeyboardButton('Назад')
+    item5 = types.KeyboardButton('Обзор')
 
-    markup.add(item1, item2, item3, item4, item5, item6)
+    markup.add(item1, item2, item3, item4, item5)
 
-    bot.send_message(chat_id, 'Меню редактирования:', reply_markup=markup)
+    bot.send_message(chat_id, 'Выберите шаг редактирования:', reply_markup=markup)
 
 @bot.message_handler(func=lambda message: True)
 def get_personal_info(message):
-    global STEP
+    global MENU
     user_id = message.from_user.id
 
     if 'name' not in user_data[user_id]:
-        # Пользователь вводит имя
         name_parts = message.text.split()
         if len(name_parts) == 3:
             if name_parts[0].isalpha() and name_parts[1].isalpha() and name_parts[2].isalpha():
-                user_data[user_id]['name'] = name_parts[0].capitalize()
-                user_data[user_id]['lastname'] = name_parts[1].capitalize()
+                user_data[user_id]['lastname'] = name_parts[0].capitalize()
+                user_data[user_id]['name'] = name_parts[1].capitalize()
                 user_data[user_id]['patr'] = name_parts[2].capitalize()
-                STEP += 1
-                ask_for_email(message.chat.id)  # 2 вопрос
+                if 'end' in user_data[user_id]:
+                    show_progress(message.chat.id)
+                    edit_menu(user_id)
+                else:
+                    ask_for_email(message.chat.id)  # 2 вопрос
             else:
                 bot.send_message(message.chat.id,'Допускаются только буквы.')
         else:
@@ -258,36 +258,47 @@ def get_personal_info(message):
 
         if is_valid_email(email):
             user_data[user_id]['email'] = email
-            STEP += 1
-            ask_for_phone(message.chat.id)#3 вопрос
+            if 'end' in user_data[user_id]:
+                show_progress(message.chat.id)
+                edit_menu(user_id)
+            else:
+                ask_for_phone(message.chat.id)#3 вопрос
         else:
             bot.send_message(message.chat.id, 'Пожалуйста, введи свою электронную почту в правильном формате.')
     elif 'phone' not in user_data[user_id]:
-        # Пользователь вводит номер телефона
         phone = message.text.strip()
 
         if is_valid_phone(phone):
             if len(phone) == 12:
                 user_data[user_id]['phone'] = phone
-                STEP += 1
-                ask_for_citizenship(message.chat.id)#4 вопрос
+                if 'end' in user_data[user_id]:
+                    show_progress(message.chat.id)
+                    edit_menu(user_id)
+                else:
+                    ask_for_citizenship(message.chat.id)#4 вопрос
+            elif len(phone) > 12:
+                bot.send_message(message.chat.id, 'Номер слишком длинный')
             else:
                 bot.send_message(message.chat.id, 'Номер слишком короткий')
         else:
-            # Если номер телефона введен в неправильном формате, просим пользователя ввести правильный формат
             bot.send_message(message.chat.id, 'Пожалуйста, введи свой номер телефона в правильном формате: +7')
     elif 'citizenship' not in user_data[user_id]:
         citizenship = message.text.strip()
         user_data[user_id]['citizenship'] = citizenship
-        STEP += 1
-        #ask_for_birthdate(message.chat.id)
+        if 'end' in user_data[user_id]:
+            show_progress(message.chat.id)
+            edit_menu(user_id)
+        else:
+            ask_for_birthdate(message.chat.id)
     elif 'birthdate' not in user_data[user_id]:
         birthdate = message.text.strip()
-        print(birthdate)
         if is_valid_birthdate(birthdate):
             user_data[user_id]['birthdate'] = birthdate
-
-            ask_for_gender(message.chat.id)
+            if 'end' in user_data[user_id]:
+                show_progress(message.chat.id)
+                edit_menu(user_id)
+            else:
+                ask_for_gender(message.chat.id)
         else:
             bot.send_message(message.chat.id, 'Пожалуйста, введи свою дату рождения в правильном формате.')
     elif 'gender' not in user_data[user_id]:
@@ -295,114 +306,290 @@ def get_personal_info(message):
         if gender.lower() == 'женский' or gender.lower() == 'мужской':
 
             user_data[user_id]['gender'] = gender.capitalize()
-
-            ask_for_status(message.chat.id)
+            if 'end' in user_data[user_id]:
+                show_progress(message.chat.id)
+                edit_menu(user_id)
+            else:
+                ask_for_status(message.chat.id)
         else:
             bot.send_message(message.chat.id, 'Пожалуйста, введи либо женский, либо мужской.')
-
     elif 'status' not in user_data[user_id]:
         status = message.text.strip()
 
         if all(word.isalpha() or word.isspace() for word in status.split()):
             user_data[user_id]['status'] = status.capitalize()
-            ask_for_city(message.chat.id)
+            if 'end' in user_data[user_id]:
+                show_progress(message.chat.id)
+                edit_menu(user_id)
+            else:
+                ask_for_city(message.chat.id)
         else:
             bot.send_message(message.chat.id, 'Допускаются только буквы.')
-
-
     elif 'city' not in user_data[user_id]:
         city = message.text.strip()
         if all(word.isalpha() or word.isspace() for word in city.split()):
             user_data[user_id]['city'] = city.capitalize()
             bot.send_message(message.chat.id, '<b>Шаг 3 из 5.</b> Образование.', parse_mode='html')
-
-            ask_for_univ(message.chat.id)
+            if 'end' in user_data[user_id]:
+                show_progress(message.chat.id)
+                edit_menu(user_id)
+            else:
+                ask_for_univ(message.chat.id)
         else:
             bot.send_message(message.chat.id, 'Допускаются только буквы.')
-
-
     elif 'univ' not in user_data[user_id]:
         univ = message.text.strip()
         if all(word.isalpha() or word.isspace() for word in univ.split()):
             user_data[user_id]['univ'] = univ
-            ask_for_facultate(message.chat.id)
+            if 'end' in user_data[user_id]:
+                show_progress(message.chat.id)
+                edit_menu(user_id)
+            else:
+                ask_for_facultate(message.chat.id)
         else:
             bot.send_message(message.chat.id, 'Допускаются только буквы.')
-
-
     elif 'facultate' not in user_data[user_id]:
         facultate = message.text.strip()
         if all(word.isalpha() or word.isspace() for word in facultate.split()):
             user_data[user_id]['facultate'] = facultate.capitalize()
-            ask_for_formed(message.chat.id)
+            if 'end' in user_data[user_id]:
+                show_progress(message.chat.id)
+                edit_menu(user_id)
+            else:
+                ask_for_formed(message.chat.id)
         else:
             bot.send_message(message.chat.id, 'Допускаются только буквы.')
-
-
     elif 'formed' not in user_data[user_id]:
         formed = message.text.strip()
         if all(word.isalpha() or word.isspace() for word in formed.split()):
             user_data[user_id]['formed'] = formed.capitalize()
-            ask_for_year(message.chat.id)
+            if 'end' in user_data[user_id]:
+                show_progress(message.chat.id)
+                edit_menu(user_id)
+            else:
+                ask_for_year(message.chat.id)
         else:
             bot.send_message(message.chat.id, 'Допускаются только буквы.')
-
     elif 'year' not in user_data[user_id]:
         year = message.text.strip()
         if year.isdigit() and int(year) > 1980:
             user_data[user_id]['year'] = year
-            ask_for_prof(message.chat.id)
+            if 'end' in user_data[user_id]:
+                show_progress(message.chat.id)
+                edit_menu(user_id)
+            else:
+                ask_for_prof(message.chat.id)
         else:
             bot.send_message(message.chat.id, 'Пожалуйста, введи правильный год.')
-
-
     elif 'prof' not in user_data[user_id]:
         prof = message.text.strip()
         if all(word.isalpha() or word.isspace() for word in prof.split()):
             user_data[user_id]['prof'] = prof.capitalize()
-
-            bot.send_message(message.chat.id, '<b>Шаг 4 из 5.</b> Опыт работы.', parse_mode='html')
-            ask_for_post(message.chat.id)
+            if 'end' in user_data[user_id]:
+                show_progress(message.chat.id)
+                edit_menu(user_id)
+            else:
+                bot.send_message(message.chat.id, '<b>Шаг 4 из 5.</b> Опыт работы.', parse_mode='html')
+                ask_for_post(message.chat.id)
         else:
             bot.send_message(message.chat.id, 'Допускаются только буквы.')
-
-
     elif 'post' not in user_data[user_id]:
         post = message.text.strip()
         if all(word.isalpha() or word.isspace() for word in post.split()):
             user_data[user_id]['post'] = post.capitalize()
-            ask_for_exp(message.chat.id)
+            if 'end' in user_data[user_id]:
+                show_progress(message.chat.id)
+                edit_menu(user_id)
+            else:
+                ask_for_exp(message.chat.id)
         else:
             bot.send_message(message.chat.id, 'Допускаются только буквы.')
-
-
     elif 'exp' not in user_data[user_id]:
         exp = message.text.strip()
         user_data[user_id]['exp'] = exp.capitalize()
-        ask_for_dopinf(message.chat.id)
-
+        if 'end' in user_data[user_id]:
+            show_progress(message.chat.id)
+            edit_menu(user_id)
+        else:
+            ask_for_dopinf(message.chat.id)
     elif 'dopinf' not in user_data[user_id]:
         dopinf = message.text.strip()
         if len(dopinf) > 120:
             user_data[user_id]['dopinf'] = dopinf
-            ask_for_link(message.chat.id)
+            if 'end' in user_data[user_id]:
+                show_progress(message.chat.id)
+                edit_menu(user_id)
+            else:
+                ask_for_link(message.chat.id)
         else:
             bot.send_message(message.chat.id, 'Сообщение должно содержать более 120 символов', parse_mode='html')
-
-
     elif 'link' not in user_data[user_id]:
         link = message.text.strip()
         user_data[user_id]['link'] = link
-
-        bot.send_message(message.chat.id, '<b>Шаг 5 из 5.</b> Почти готово!', parse_mode='html')
-
+        if 'end' not in user_data[user_id]:
+            bot.send_message(message.chat.id, '<b>Шаг 5 из 5.</b> Почти готово!', parse_mode='html')
+        user_data[user_id]['end'] = 'true'
         show_progress(message.chat.id)
-        """
 
+    if 'end' in user_data[user_id]:
+        if not MENU:
+            MENU = True
+            edit_menu(user_id)
 
-    if STEP == 5:
-        edit_menu({'message': {'chat': {'id': user_id}}})"""
+        button_text = message.text
 
+        if button_text == 'Шаг 1':
+            markup1 = types.ReplyKeyboardMarkup(resize_keyboard=True)
 
+            item1 = types.KeyboardButton('Шаблон')
+            item2 = types.KeyboardButton('Назад')
+            markup1.add(item1, item2)
+
+            bot.send_message(message.chat.id, 'Редактировать:', reply_markup=markup1)
+        if button_text == 'Шаг 2':
+            markup2 = types.ReplyKeyboardMarkup(resize_keyboard=True)
+
+            item1 = types.KeyboardButton('ФИО')
+            item2 = types.KeyboardButton('Почта')
+            item3 = types.KeyboardButton('Номер')
+            item4 = types.KeyboardButton('Гражданство')
+            item5 = types.KeyboardButton('Дата рождения')
+            item6 = types.KeyboardButton('Пол')
+            item7 = types.KeyboardButton('СП')
+            item8 = types.KeyboardButton('Город')
+            item9 = types.KeyboardButton('Назад')
+            markup2.add(item1, item2, item3, item4, item5, item6, item7, item8, item9)
+
+            bot.send_message(message.chat.id, 'Редактировать:', reply_markup=markup2)
+
+        if button_text == 'Шаг 3':
+            markup3 = types.ReplyKeyboardMarkup(resize_keyboard=True)
+
+            item1 = types.KeyboardButton('Уч. заведение')
+            item2 = types.KeyboardButton('Факультет')
+            item3 = types.KeyboardButton('Форма обучения')
+            item4 = types.KeyboardButton('Год окончания')
+            item5 = types.KeyboardButton('Специальность')
+            item6 = types.KeyboardButton('Назад')
+
+            markup3.add(item1, item2, item3, item4, item5, item6)
+
+            bot.send_message(message.chat.id, 'Редактировать:', reply_markup=markup3)
+
+        if button_text == 'Шаг 4':
+            markup4 = types.ReplyKeyboardMarkup(resize_keyboard=True)
+
+            item1 = types.KeyboardButton('Должность')
+            item2 = types.KeyboardButton('Опыт работы')
+            item3 = types.KeyboardButton('Доп. информация')
+            item4 = types.KeyboardButton('Ссылки')
+            item5 = types.KeyboardButton('Назад')
+
+            markup4.add(item1, item2, item3, item4, item5)
+
+            bot.send_message(message.chat.id, 'Редактировать:', reply_markup=markup4)
+
+        if button_text == 'ФИО':
+            bot.send_message(message.chat.id, 'Укажи свое полное имя.')
+            del user_data[user_id]['name']
+            del user_data[user_id]['lastname']
+            del user_data[user_id]['patr']
+
+        if button_text == 'Почта':
+            ask_for_email(message.chat.id)
+            del user_data[user_id]['email']
+
+        if button_text == 'Номер':
+            ask_for_phone(message.chat.id)
+            del user_data[user_id]['phone']
+
+        if button_text == 'Гражданство':
+            ask_for_citizenship(message.chat.id)
+            del user_data[user_id]['citizenship']
+
+        if button_text == 'Дата рождения':
+            ask_for_birthdate(message.chat.id)
+            del user_data[user_id]['birthdate']
+
+        if button_text == 'Пол':
+            ask_for_gender(message.chat.id)
+            del user_data[user_id]['gender']
+
+        if button_text == 'СП':
+            ask_for_status(message.chat.id)
+            del user_data[user_id]['status']
+
+        if button_text == 'Город':
+            ask_for_city(message.chat.id)
+            del user_data[user_id]['city']
+
+        if button_text == 'Уч. заведение':
+            ask_for_univ(message.chat.id)
+            del user_data[user_id]['univ']
+
+        if button_text == 'Факультет':
+            ask_for_facultate(message.chat.id)
+            del user_data[user_id]['facultate']
+
+        if button_text == 'Форма обучения':
+            ask_for_formed(message.chat.id)
+            del user_data[user_id]['formed']
+
+        if button_text == 'Год окончания':
+            ask_for_year(message.chat.id)
+            del user_data[user_id]['year']
+
+        if button_text == 'Специальность':
+            ask_for_prof(message.chat.id)
+            del user_data[user_id]['prof']
+
+        if button_text == 'Должность':
+            ask_for_post(message.chat.id)
+            del user_data[user_id]['post']
+
+        if button_text == 'Опыт работы':
+            ask_for_exp(message.chat.id)
+            del user_data[user_id]['exp']
+
+        if button_text == 'Доп. информация':
+            ask_for_dopinf(message.chat.id)
+            del user_data[user_id]['dopinf']
+
+        if button_text == 'Ссылки':
+            ask_for_link(message.chat.id)
+            del user_data[user_id]['link']
+
+        if button_text == 'Обзор':
+            show_progress(message.chat.id)
+
+        if button_text == 'Назад':
+            edit_menu(user_id)
+
+        if button_text == 'Шаблон':
+            media_group = []
+            markup_inline = types.InlineKeyboardMarkup()
+
+            for i in range(1, 6):
+                photo_path = f'/Users/annasemenova/Desktop/рабочий стол/проектная деятельность/image/{i}.jpg'
+                media_group.append(types.InputMediaPhoto(media=open(photo_path, 'rb')))
+
+            bot.send_message(message.chat.id,'Выберите один из пяти шаблонов📋')
+            bot.send_media_group(message.chat.id, media=media_group)
+
+        if button_text in '12345':
+            user_data[user_id]['template'] = button_text
+"""       
+@bot.callback_query_handler(func=lambda call: call.data.startswith('Template_'))
+def choose_template(call):
+    template_number = int(call.data.split('_')[1])
+
+    user_id = call.from_user.id
+    user_data[user_id]['template'] = template_number
+
+    bot.edit_message_reply_markup(chat_id=call.message.chat.id, message_id=call.message.message_id, reply_markup=None)
+
+    bot.send_message(call.message.chat.id, f'«Шаблон {template_number}» выбран успешно! ✅\n')
+    edit_menu(user_id)"""
 
 bot.polling(none_stop=True)
+
