@@ -1,0 +1,241 @@
+body {
+	height: 1500px;
+	font-family: 'Prompt', sans-serif;
+	font-size: 14px;
+	font-style: normal;
+	font-weight: 400;
+	line-height: 18px;
+	color: #333333;
+}
+
+.visually-hidden {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	margin: -1px;
+	padding: 0;
+	border: 0;
+	clip: rect(0 0 0 0);
+	overflow: hidden;
+}
+
+.pdf-kit {
+	width: 1060px;
+	height: 100%;
+	padding: 20px;
+	margin: 0 auto;
+}
+
+section {
+	margin-bottom: 30px;
+}
+
+.wrapper {
+	position: relative;
+	width: 980px;
+	margin: auto;
+	padding: 40px 60px;
+	border-radius: 10px;
+	border: 1px solid #444;
+}
+
+main {
+	width: 490px;
+}
+
+aside {
+	position: absolute;
+	top: 40px;
+	right: 90px;
+	width: 270px;
+	color: #fff;
+}
+
+.accent {
+	color: #948e5c;
+}
+
+.decor-1 {
+	position: absolute;
+	top: 20px;
+	left: 580px;
+	width: 340px;
+	bottom: 20px;
+	background-color: #948e5c;
+	z-index: -1;
+}
+
+.container {
+	padding-left: 21px;
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+	border-left: 1px solid #d0d0d0;
+	margin-left: 12px;
+}
+
+.title {
+	position: relative;
+	font-size: 16px;
+	font-weight: 700;
+	line-height: 26px;
+	padding-left: 32px;
+	margin-bottom: 13px;
+}
+
+.title::after {
+	content: '';
+	position: absolute;
+	width: 24px;
+	height: 24px;
+	top: 0;
+	left: 0;
+}
+
+#personal-information > .title::after {
+	background-image: url('person-section.svg');
+}
+
+#work-experience > .title::after {
+	background-image: url('work.svg');
+}
+
+#education > .title::after {
+	background-image: url('education.svg');
+}
+
+#courses > .title::after {
+	background-image: url('education.svg');
+}
+
+#additional-information > .title::after {
+	background-image: url('info.svg');
+}
+
+.container > p {
+	color: #757575;
+}
+.container > p > span {
+	margin-left: 5px;
+	color: #111;
+}
+
+.list-item {
+	margin-bottom: 15px;
+}
+
+.container > ul {
+	margin-bottom: 7px;
+}
+
+.container > ul > li {
+	padding-left: 25px;
+	color: #111;
+	position: relative;
+	line-height: 18px;
+	margin-bottom: 2px;
+}
+
+.achievements > li::after,
+.duties > li::after {
+	content: '';
+	position: absolute;
+	width: 18px;
+	height: 18px;
+	top: 0;
+	left: 0;
+	background-position: center;
+}
+
+.achievements > li::after {
+	background-image: url('plus-03.svg');
+}
+
+.duties > li::after {
+	background-image: url('duties.svg');
+}
+
+.basic-information {
+	position: relative;
+	height: 120px;
+}
+
+.information {
+	position: absolute;
+	top: 0px;
+	left: 150px;
+}
+
+#photo-user {
+	width: 120px;
+	height: 120px;
+	background-color: #f0f0f0;
+	border-radius: 10px;
+}
+
+.FIO {
+	font-weight: 700;
+	font-size: 24px;
+	line-height: 26px;
+	text-transform: capitalize;
+	margin-bottom: 10px;
+}
+
+.post {
+	font-weight: 700;
+	font-size: 16px;
+	line-height: 26px;
+	text-transform: capitalize;
+}
+
+.city {
+	color: #757575;
+}
+
+/* Additional-information */
+
+#additional-information p:nth-child(4) {
+	margin: 7px 0;
+}
+
+.container > p > .free-time,
+.container > p > .personal-qualities {
+	display: block;
+	margin-top: 3px;
+}
+
+/* Aside */
+
+.aside-information > .container > p {
+	color: #d8d8d8;
+	line-height: 24px;
+}
+
+.aside-information > .container {
+	padding-bottom: 4px;
+	padding-top: 4px;
+}
+
+.aside-information ul > li {
+	margin-left: 0;
+	color: #d8d8d8;
+	margin-bottom: 6px;
+	padding-left: 30px;
+	line-height: 24px;
+	position: relative;
+}
+
+.aside-information ul > li::after {
+	content: '';
+	position: absolute;
+	width: 24px;
+	height: 24px;
+	top: 0;
+	left: 0;
+	background-image: url('check.svg');
+}
+
+.aside-information .title {
+	padding-left: 0;
+	font-weight: 700;
+}
